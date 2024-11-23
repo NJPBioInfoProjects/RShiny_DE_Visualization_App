@@ -15,21 +15,25 @@ ui <- fluidPage(
     # Application title
     titlePanel("Nick Petrunich BF591 Final Project"),
 
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+    # Tab structure
+    tabsetPanel(
+      
+      tabPanel("Samples",
+               sidebarLayout(
+                 sidebarPanel(
+                   fileInput("sample_file", "Upload a sample file (.csv or .tsv)"), #sample_file is the name of the input
+                   actionButton("submit_samples", "submit") # button says "submit" and "submit_samples" is the ID of the action button
+                 ),
+                 mainPanel(
+                   tabsetPanel(
+                     tabPanel("Summary", "Summary content placeholder"),
+                     tabPanel("Table", "Table content placeholder"),
+                     tabPanel("Plots", "Plot content placeholder")
+                   )
+                 )
+               ))
     )
+    
 )
 
 # Define server logic required to draw a histogram
