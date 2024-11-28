@@ -11,31 +11,52 @@ library(shiny)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Nick Petrunich BF591 Final Project"),
-
-    # Tab structure
-    tabsetPanel(
-      
-      tabPanel("Samples",
-               sidebarLayout(
-                 sidebarPanel(
-                   fileInput("sample_file", "Upload a sample file (.csv)", accept = ".csv"), #sample_file is the name of the input
-                   actionButton("submit_samples", "submit") # button says "submit" and "submit_samples" is the ID of the action button
-                 ),
-                 mainPanel(
-                   tabsetPanel(
-                     tabPanel("Summary", 
-                              tableOutput("summary_table")),
-                     tabPanel("Table", "Table content placeholder"),
-                     tabPanel("Plots", "Plot content placeholder")
+  
+  # Application title
+  titlePanel("Nick Petrunich BF591 Final Project"),
+  
+  # Tab structure
+  tabsetPanel(
+    
+    tabPanel("Samples",
+             sidebarLayout(
+               sidebarPanel(
+                 fileInput("sample_file", "Upload a sample file (.csv)", accept = ".csv"),  # sample_file is the name of the input
+                 actionButton("submit_samples", "Submit")  # Button says "Submit" and "submit_samples" is the ID of the action button
+               ),
+               mainPanel(
+                 tabsetPanel(
+                   tabPanel("Summary", 
+                            tableOutput("summary_table")),
+                   tabPanel("Table", "Table content placeholder"),
+                   tabPanel("Plots", "Plot content placeholder")
+                 )
+               )
+             )
+    ),
+    
+    tabPanel("Counts",
+             sidebarLayout(
+               sidebarPanel(
+                 fileInput("counts_file", "Upload a normalized counts file"),
+                 actionButton("submit_counts", "Submit")
+               ),
+               mainPanel(
+                 fluidRow(
+                   column(6,
+                          sliderInput("slider_n_variance", "Slider 1:", min = 0, max = 100, value = 50),
+                          sliderInput("slider_n_non_zero", "Slider 2:", min = 0, max = 100, value = 50)
+                   ),
+                   column(6,
+                          plotOutput("counts_plot")  # Placeholder for the plot
                    )
                  )
-               ))
+               )
+             )
     )
-    
+  )
 )
+
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
