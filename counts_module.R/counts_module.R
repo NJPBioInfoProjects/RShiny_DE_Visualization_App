@@ -45,20 +45,22 @@ counts_module_server <- function(id) {
     #reactive expression for the processing the uploaded file
     counts_data <- reactive({
       req(input$counts_file) #ensure that the file is uploaded
-      read.csv(input$counts_file$datapath, row.names = 1) #THIS MAY NEED CHANGING, HAVE TO SEE
+      data <- read.csv(input$counts_file$datapath, row.names = 1) #THIS MAY NEED CHANGING, HAVE TO SEE
+      return(data)
     })
     
     filtered_data <- reactive({
-      req(counts_data)
-      data <- counts_data
+      req(input$counts_file)
+      data <- counts_data()
       
       #filter based on the variance threshold
       variance_threshold <- quantile(apply(data, 1, var), probs = input$variance_slider / 100)
-      variance_filtered <- data[apply(data, 1, var) >= variance_threshold, ]
+      filtered_by_variance <- data[apply(data, 1, var) >= variance_threshold, ]
+      
       
       #filter based on non-zero samples
       nonzero_threshold <- input$nonzero_slider
-      filtered <- filtered_by_variance[rowSums(filtered_by_variance > 0) >= nonzero_threshold, ]
+      filtered <- filtered_by_variance[rowSums(filtered_by_variance > 0) >= nonzero_threshold, ]      
       
       return(filtered)
     })
@@ -87,6 +89,7 @@ counts_module_server <- function(id) {
           paste0(not_passing_genes, " (", not_passing_percentage, "%)")
         )
       )
+      return(summary)
     })
   })
 }
