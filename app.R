@@ -10,7 +10,7 @@
 library(shiny)
 
 # Source module files
-source("app_samples/samples_module.R")
+source("samples_module.R")
 source("counts_module.R/counts_module.R")
 
 # Define the UI
