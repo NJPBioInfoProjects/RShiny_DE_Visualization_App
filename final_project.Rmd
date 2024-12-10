@@ -1,0 +1,134 @@
+---
+title: "final_project_work"
+output: html_document
+date: "2024-11-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#clean the data
+library('tidyverse')
+```
+
+Load the tsv
+```{r}
+data <- read_tsv("data/GSE64810_series_matrix.txt")
+
+```
+
+```{r}
+# Specify the file path
+file_path <- "data/GSE64810_series_matrix.txt"
+
+# Read the file
+file_lines <- readLines(file_path)
+
+# Extract lines starting with "!Sample"
+sample_lines <- file_lines[grep("^!Sample", file_lines)]
+
+# Print the extracted lines
+print(sample_lines)
+
+# Optional: Save the extracted lines to a new file if needed
+writeLines(sample_lines, "sample_metadata_extracted.txt")
+
+metadata_df <- sample_lines %>%
+  # Split each line into key and values
+  map(~ {
+    split_line <- str_split(.x, "\t", n = 2)[[1]]  # Split into key and values
+    if (length(split_line) < 2) {
+      data.frame(Key = split_line[1], Values = NA)  # Assign NA if no values
+    } else {
+      data.frame(Key = split_line[1], Values = split_line[2])  # Key and Values
+    }
+  }) %>%
+  bind_rows()  # Combine all rows into a single data frame
+
+# Expand the Values column into separate columns for each sample
+metadata_df <- metadata_df %>%
+  mutate(Values = str_split(Values, "\t")) %>%
+  unnest_wider(Values, names_sep = "_", names_repair = "unique")
+
+# Transpose the data frame to make Keys the column headers
+metadata_df_t <- metadata_df %>%
+  column_to_rownames("Key") %>%  # Set the "Key" column as row names
+  t() %>%  # Transpose the data frame
+  as.data.frame()  # Convert back to data frame
+
+# Reset row names as a new column (optional)
+metadata_df_t <- metadata_df_t %>%
+  rownames_to_column("Sample_ID")
+
+# View the resulting data frame
+print(metadata_df_t)
+
+# Save the final metadata file
+write_csv(metadata_df_t, "metadata_transposed.csv")
+```
+
+```{r}
+# Load necessary library
+library(tidyverse)
+
+# Set the file path
+file_path <- "data/GSE64810_series_matrix.txt"
+
+# Read the file while skipping comments starting with '!'
+metadata_lines <- readLines(file_path) %>% 
+  grep("^!Sample_", ., value = TRUE)
+
+# Extract relevant metadata into a tidy format
+# Extract relevant metadata into a tidy format
+metadata_df <- metadata_lines %>%
+  # Safely split each line into key and values
+  map(~ {
+    split_line <- str_split(.x, "\t", n = 2)[[1]]
+    if (length(split_line) == 2) split_line else c(split_line, NA)
+  }) %>%
+  tibble::tibble() %>%
+  set_names(c("Key", "Values")) %>%
+  # Expand the values into separate columns for each sample
+  mutate(Values = str_split(Values, "\t")) %>%
+  unnest_wider(Values, names_sep = "_")
+
+
+# Filter for key metadata (e.g., diagnosis, tissue, age of death)
+# Adjust the patterns below to focus on other characteristics if needed
+key_metadata <- metadata_df %>%
+  filter(Key %in% c(
+    "!Sample_characteristics_ch1",
+    "!Sample_title",
+    "!Sample_geo_accession"
+  )) %>%
+  pivot_longer(cols = starts_with("..."), names_to = "Sample", values_to = "Metadata") %>%
+  separate(Metadata, into = c("Characteristic", "Value"), sep = ": ", fill = "right")
+
+# Write the cleaned metadata to a CSV for further analysis
+write_csv(key_metadata, "sample_metadata.csv")
+
+# View a summary of the metadata
+print(key_metadata)
+
+```
