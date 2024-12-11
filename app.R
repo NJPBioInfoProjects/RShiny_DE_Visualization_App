@@ -10,15 +10,17 @@
 library(shiny)
 
 # Source module files
-source("samples_module.R")
+source("app_samples/samples_module.R")
 source("counts_module.R/counts_module.R")
+source("de_module/de_module.R")
 
 # Define the UI
 ui <- fluidPage(
   titlePanel("Nick Petrunich BF591 Final Project"),
   tabsetPanel(
     samples_module_ui("samples"),  # Load Samples Module
-    counts_module_ui("counts")    # Load Counts Module
+    counts_module_ui("counts"),    # Load Counts Module
+    de_module_ui("DE")
   )
 )
 
@@ -26,6 +28,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   samples_module_server("samples")  # Call Samples Server
   counts_module_server("counts")    # Call Counts Server
+  de_module_server("DE")
 }
 
 # Run the application 
