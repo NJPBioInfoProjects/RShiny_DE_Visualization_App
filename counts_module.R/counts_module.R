@@ -27,15 +27,28 @@ counts_module_ui <- function(id) {
                           plotOutput(ns("scatter_plot1")),
                           plotOutput(ns("scatter_plot2"))
                  ),
-                 tabPanel("Heatmap", plotOutput(ns("heatmap_plot"))
+                 tabPanel("Heatmap", 
+                          plotOutput(ns("heatmap_plot"))
                  ),
-                 tabPanel("PCA", plotOutput(ns("pca_plot"))
+                 tabPanel("PCA",
+                          sidebarLayout(
+                            sidebarPanel(
+                              selectInput(ns("pc_x"), "X-axis Principal Component", 
+                                          choices = 1:10, selected = 1),  # Top 10 PCs as options
+                              selectInput(ns("pc_y"), "Y-axis Principal Component", 
+                                          choices = 1:10, selected = 2)   # Default PC2 for y-axis
+                            ),
+                            mainPanel(
+                              plotOutput(ns("pca_plot"), height = "600px")  # PCA Scatter Plot
+                            )
+                          )
                  )
                )
              )
            )
   )
 }
+
 
 # Counts Module Server
 counts_module_server <- function(id) {
@@ -170,6 +183,42 @@ counts_module_server <- function(id) {
         main = "Clustered Heatmap of Filtered Counts",  # Title
         density.info = "none"  # Disable density plot in the color key
       )
+    })
+    
+    #PCA plot
+    output$pca_plot <- renderPlot({
+      req(filtered_data())  # Ensure filtered data is available
+      data <- filtered_data()  # Get the filtered dataset
+      
+      # Perform PCA
+      pca <- prcomp(t(data), scale. = TRUE)  # Transpose to have samples as rows
+      
+      # Calculate % variance explained for each PC
+      var_explained <- round(100 * (pca$sdev^2 / sum(pca$sdev^2)), 2)
+      
+      # Extract user-selected principal components
+      pc_x <- as.numeric(input$pc_x)  # PC for x-axis
+      pc_y <- as.numeric(input$pc_y)  # PC for y-axis
+      
+      # Check if the selected PCs exist in var_explained
+      if (pc_x > length(var_explained) || pc_y > length(var_explained)) {
+        return(NULL)  # Return nothing if PCs are out of range
+      }
+      
+      # Create a data frame for plotting
+      pca_data <- as.data.frame(pca$x)
+      pca_data$Sample <- rownames(pca_data)  # Add sample names for labeling
+      
+      # Generate the scatter plot
+      ggplot(pca_data, aes_string(x = paste0("PC", pc_x), y = paste0("PC", pc_y), label = "Sample")) +
+        geom_point(size = 3, color = "darkblue") +
+        geom_text(vjust = -1, size = 3) +  # Optional: Add sample labels
+        labs(
+          title = "PCA Scatter Plot",
+          x = paste0("PC", pc_x, " (", var_explained[pc_x], "% Variance Explained)"),
+          y = paste0("PC", pc_y, " (", var_explained[pc_y], "% Variance Explained)")
+        ) +
+        theme_minimal()
     })
   })
 }
