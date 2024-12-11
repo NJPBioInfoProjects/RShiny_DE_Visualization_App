@@ -17,7 +17,7 @@ counts_module_ui <- function(id) {
              sidebarPanel(
                fileInput(ns("counts_file"), "Upload a normalized counts file (CSV)"),
                sliderInput(ns("variance_slider"), "Variance % Threshold:", min = 0, max = 100, value = 50),
-               sliderInput(ns("nonzero_slider"), "Minimum number of non-zero samples", min = 0, max = 100, value = 5),
+               sliderInput(ns("nonzero_slider"), "Minimum number of non-zero samples", min = 0, max = 8, value = 5),
                actionButton(ns("submit_counts"), "Submit")
              ),
              mainPanel(
@@ -27,7 +27,7 @@ counts_module_ui <- function(id) {
                           plotOutput(ns("scatter_plot1")),
                           plotOutput(ns("scatter_plot2"))
                  ),
-                 tabPanel("Heatmap", plotOutput(ns("clustered_heatmap"))
+                 tabPanel("Heatmap", plotOutput(ns("heatmap_plot"))
                  ),
                  tabPanel("PCA", plotOutput(ns("pca_plot"))
                  )
@@ -95,21 +95,81 @@ counts_module_server <- function(id) {
     # Scatter plot 1: Median Count vs Variance
     output$scatter_plot1 <- renderPlot({
       req(filtered_data())
-      data <- filtered_data()
+      data <- counts_data()  # Full dataset before filtering
+      filtered <- filtered_data()  # Filtered dataset
       
       # Calculate median counts and variances
       df <- data.frame(
         Median = apply(data, 1, median, na.rm = TRUE),
-        Variance = apply(data, 1, var, na.rm = TRUE)
+        Variance = apply(data, 1, var, na.rm = TRUE),
+        PassedFilter = rownames(data) %in% rownames(filtered)  # TRUE if gene passed filters
+      )
+      
+      # Generate the plot with log scale
+      ggplot(df, aes(x = Variance, y = Median, color = PassedFilter)) +
+        geom_point(size = 2) +
+        scale_x_log10() +  # Apply log scale to the x-axis
+        scale_y_log10() +  # Apply log scale to the y-axis
+        scale_color_manual(values = c("yellow", "darkblue"), labels = c("Filtered Out", "Passed Filter")) +
+        labs(
+          title = "Median Count vs Variance (Log Scale)",
+          x = "Variance (log10)",
+          y = "Median Count (log10)",
+          color = "Filter Status"
+        ) +
+        theme_minimal()
+    })
+    
+    # Scatter plot 2: Median Count vs Number of Zeros
+    output$scatter_plot2 <- renderPlot({
+      req(filtered_data())
+      data <- counts_data()  # Full dataset before filtering
+      filtered <- filtered_data()  # Filtered dataset
+      
+      # Calculate median counts and number of zeros
+      df <- data.frame(
+        Median = as.numeric(apply(data, 1, median, na.rm = TRUE)),  # Ensure it's numeric
+        NumZeros = as.numeric(apply(data, 1, function(x) sum(x == 0))),  # Ensure it's numeric
+        PassedFilter = as.logical(rownames(data) %in% rownames(filtered))  # Ensure logical type
       )
       
       # Generate the plot
-      ggplot(df, aes(x = Variance, y = Median)) +
-        geom_point(color = "blue", size = 2) +
-        labs(title = "Median Count vs Variance", x = "Variance (log10)", y = "Median Counts (log10)") +
-        scale_x_log10() +
-        scale_y_log10() +
-        theme_minimal()  # Fixed typo: 'them_minimal()' -> 'theme_minimal()'
+      ggplot(df, aes(x = NumZeros, y = Median, color = PassedFilter)) +
+        geom_point(size = 2) +
+        scale_y_log10() +  # Apply log scale to the y-axis (median counts)
+        scale_color_manual(values = c("lightgray", "darkgreen"), labels = c("Filtered Out", "Passed Filter")) +
+        labs(
+          title = "Median Count vs Number of Zeros",
+          x = "Number of Zeros",
+          y = "Median Count (log10)",
+          color = "Filter Status"
+        ) +
+        theme_minimal()
+    })
+    
+    # Heatmap plot
+    output$heatmap_plot <- renderPlot({
+      req(filtered_data())
+      data <- filtered_data()  # Use filtered data
+      
+      # Apply log transformation for better visualization
+      log_data <- log1p(data)  # Log-transform counts (log(x + 1))
+      
+      # Generate the heatmap
+      library(gplots)
+      heatmap.2(
+        x = as.matrix(log_data),  # Convert data to matrix
+        dendrogram = "both",  # Cluster both rows and columns
+        trace = "none",  # Remove trace lines
+        col = colorRampPalette(c("blue", "white", "red"))(100),  # Heatmap colors
+        scale = "row",  # Scale by row (standardize genes)
+        margins = c(8, 8),  # Margins for row/column labels
+        key = TRUE,  # Show color key
+        key.title = "Log Count",  # Title for the color key
+        key.xlab = "Log-Transformed Value",  # X-axis label for key
+        main = "Clustered Heatmap of Filtered Counts",  # Title
+        density.info = "none"  # Disable density plot in the color key
+      )
     })
   })
 }
@@ -129,3 +189,5 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
+
