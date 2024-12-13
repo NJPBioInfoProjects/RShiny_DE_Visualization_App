@@ -18,8 +18,8 @@ samples_module_ui <- function(id) {
   tabPanel("Samples",
            sidebarLayout(
              sidebarPanel(
-               fileInput(ns("sample_file"), "Upload a sample file (.csv)", accept = ".csv"),
-               actionButton(ns("submit_samples"), "Submit")
+               fileInput(ns("sample_file"), "Upload a sample file (.csv)", accept = ".csv")
+               # actionButton(ns("submit_samples"), "Submit") not being used at the moment
              ),
              mainPanel(
                tabsetPanel(
@@ -31,7 +31,8 @@ samples_module_ui <- function(id) {
                               selectInput(ns("plot_column"), "Select a column to plot:",
                                           choices = NULL),  # Dynamically populated
                               selectInput(ns("group_column"), "Group by (optional):",
-                                          choices = NULL, selected = "None")  # Dynamically populated
+                                          choices = NULL, selected = "None"),  # Dynamically populated
+                              actionButton(ns("plot_button"), "Plot")  # Fixed: Use `ns()`
                             ),
                             mainPanel(
                               plotOutput(ns("histogram_plot"), height = "600px")
@@ -89,7 +90,7 @@ samples_module_server <- function(id) {
       req(sample_data())
       DT::datatable(sample_data(), options = list(pageLength = 10, scrollX = TRUE))
     })
-      
+    
     # Dynamically update column choices for plotting
     observeEvent(sample_data(), {
       data <- sample_data()
@@ -101,36 +102,50 @@ samples_module_server <- function(id) {
       updateSelectInput(session, "group_column", choices = c("None", categorical_columns))
     })
     
+    # ReactiveValues to store plot parameters
+    plot_params <- reactiveValues(
+      plot_column = NULL,
+      group_column = NULL
+    )
+    
+    # Observe when the plot button is clicked
+    observeEvent(input$plot_button, {
+      req(sample_data())  # Ensure data is loaded
+      plot_params$plot_column <- input$plot_column  # Update plot column
+      plot_params$group_column <- input$group_column  # Update group column
+    })
+    
     # Render the histogram plot
     output$histogram_plot <- renderPlot({
-      req(sample_data(), input$plot_column)  # Ensure data and a column are selected
+      req(plot_params$plot_column)  # Ensure the parameters are set
+      req(sample_data())  # Ensure data is loaded
       data <- sample_data()
       
       # Extract selected column and optional grouping
-      plot_column <- input$plot_column
-      group_column <- input$group_column
+      plot_column <- plot_params$plot_column
+      group_column <- plot_params$group_column
       
-      # Base histogram
+      # Base histogram with number of bins
       p <- ggplot(data, aes_string(x = plot_column)) +
         geom_histogram(aes(y = ..count..), bins = 10, fill = "cyan", color = "black", alpha = 0.7) +
         labs(title = paste("Histogram of", plot_column), x = plot_column, y = "Counts") +
         theme_minimal()
       
       # Add grouping if selected
-      if (group_column != "None") {
+      if (!is.null(group_column) && group_column != "None") {
         p <- ggplot(data, aes_string(x = plot_column, fill = group_column)) +
-          geom_histogram(aes(y = ..count..), bins = 10, color = "black", alpha = 0.7, position = "dodge") +
+          geom_histogram(aes(y = ..count..), bins = 10, color = "black", alpha = 0.7, position = "stack") +
           labs(title = paste("Histogram of", plot_column, "by", group_column),
                x = plot_column, y = "Counts", fill = group_column) +
           theme_minimal()
       }
       
-        return(p)
-      
-      
+      return(p)
     })
   })
 }
+
+
 
 # Top-level UI
 ui <- fluidPage(
