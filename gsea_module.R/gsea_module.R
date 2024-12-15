@@ -8,7 +8,10 @@
 #
 
 library(shiny)
+library(tidyverse)
+library(DT)
 
+# GSEA Module UI
 gsea_module_ui <- function(id) {
   ns <- NS(id)  # Namespace for the module
   tabPanel("GSEA",
@@ -66,10 +69,9 @@ gsea_module_ui <- function(id) {
   )
 }
 
+# GSEA Module Server
 gsea_module_server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    
     gsea_data <- reactiveVal(NULL)
     
     # Load and validate data
@@ -89,7 +91,7 @@ gsea_module_server <- function(id) {
       gsea_data(data)
     })
     
-    # Filtered and ordered data based on padj, limited by slider
+    # Filtered and ordered data for barplot
     filtered_data <- reactive({
       req(gsea_data())
       gsea_data() %>%
@@ -100,12 +102,12 @@ gsea_module_server <- function(id) {
     # Render the bar plot
     output$gsea_barplot <- renderPlot({
       req(filtered_data())
-      ggplot(filtered_data(), aes(x = reorder(pathway, NES), y = NES, fill = NES > 0)) +
+      ggplot(filtered_data(), aes(x = reorder(pathway, abs(NES)), y = NES, fill = NES > 0)) +
         geom_bar(stat = "identity") +
         coord_flip() +  # Horizontal bars
         scale_fill_manual(values = c("red", "blue"), labels = c("Negative NES", "Positive NES")) +
         labs(
-          title = "Top Pathways Ordered by Adjusted P-value",
+          title = "Top Pathways Ordered by Absolute NES",
           x = "",
           y = "Normalized Enrichment Score (NES)",
           fill = "NES Direction"
@@ -117,24 +119,52 @@ gsea_module_server <- function(id) {
           legend.position = "bottom"
         )
     })
+    
+    # Filtered table based on p-value and NES direction
+    filtered_table <- reactive({
+      req(gsea_data())
+      data <- gsea_data()
+      
+      # Filter by p-value threshold
+      filtered <- data %>% filter(padj <= input$pvalue_threshold)
+      
+      # Filter by NES direction
+      if (input$nes_filter == "positive") {
+        filtered <- filtered %>% filter(NES > 0)
+      } else if (input$nes_filter == "negative") {
+        filtered <- filtered %>% filter(NES < 0)
+      }
+      return(filtered)
+    })
+    
+    # Render the filtered table
+    output$gsea_table <- DT::renderDataTable({
+      req(filtered_table())
+      DT::datatable(filtered_table(), options = list(pageLength = 10))
+    })
+    
+    # Download filtered table
+    output$download_table <- downloadHandler(
+      filename = function() { "filtered_gsea_results.csv" },
+      content = function(file) {
+        write.csv(filtered_table(), file, row.names = FALSE)
+      }
+    )
   })
 }
 
-    
 # Top-level UI
 ui <- fluidPage(
   titlePanel("Nick Petrunich BF591 Final Project"),
   tabsetPanel(
-    #samples_module_ui("samples"),  # Samples module
-    gsea_module_ui("gsea")         # GSEA module
+    gsea_module_ui("gsea")  # GSEA module
   )
 )
 
 # Top-level Server
 server <- function(input, output, session) {
-  #samples_module_server("samples")  # Samples module
-  gsea_module_server("gsea")        # GSEA module
+  gsea_module_server("gsea")  # GSEA module
 }
 
-# Run the application
+# Run the Shiny app
 shinyApp(ui = ui, server = server)
