@@ -25,8 +25,8 @@ de_module_ui <- function(id) {
     ),
     sidebarLayout(
       sidebarPanel(
-        fileInput(ns("file"), "Load differential expression results for visual analysis",
-                  buttonLabel = "Browse", placeholder = "deseq csv"),
+        fileInput(ns("file"), "Load differential expression results for visual analysis (csv)",
+                  buttonLabel = "Browse", placeholder = "deseq csv", accept = c(".csv")),
         p("A volcano plot can be generated with log2 fold-change on the x-axis and p-adjusted on the y-axis"),
         
         # Dropdown for X-axis and Y-axis selection

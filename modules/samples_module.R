@@ -58,8 +58,13 @@ samples_module_server <- function(id) {
     # Reactive expression to load and process the uploaded sample file
     sample_data <- reactive({
       req(input$sample_file)  # Ensure file is uploaded
-      data <- read.csv(input$sample_file$datapath, stringsAsFactors = TRUE)
-      return(data)
+      tryCatch({
+        data <- read.csv(input$sample_file$datapath, stringsAsFactors = TRUE)
+        return(data)
+      }, error = function(e) {
+        showNotification("Error loading the file. Please check the format and try again.", type = "error")
+        NULL
+      })
     })
     
     # Render the Summary Table

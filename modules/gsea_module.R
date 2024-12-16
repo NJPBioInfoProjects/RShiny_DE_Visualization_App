@@ -21,7 +21,7 @@ gsea_module_ui <- function(id) {
            ),
            sidebarLayout(
              sidebarPanel(
-               fileInput(ns("gsea_file"), "Upload GSEA results (CSV):", accept = c(".csv", ".tsv")),
+               fileInput(ns("gsea_file"), "Upload GSEA results (csv):", accept = c(".csv")),
                actionButton(ns("load_data"), "Submit")  # Button to process the uploaded file
              ),
              mainPanel(
@@ -161,7 +161,7 @@ gsea_module_server <- function(id) {
       req(gsea_data())
       gsea_data() %>%
         mutate(log_padj = -log10(padj),  # Calculate -log10 adjusted p-value
-               color = ifelse(padj <= input$scatter_pvalue_threshold, "Highlight", "Below Threshold"))
+               color = ifelse(padj <= input$scatter_pvalue_threshold, "Meets Threshold", "Below Threshold"))
     })
     
     # Render the scatter plot
@@ -169,7 +169,7 @@ gsea_module_server <- function(id) {
       req(scatter_data())
       ggplot(scatter_data(), aes(x = NES, y = log_padj, color = color)) +
         geom_point(size = 3, alpha = 0.7) +
-        scale_color_manual(values = c("Highlight" = "red", "Below Threshold" = "grey")) +
+        scale_color_manual(values = c("Meets Threshold" = "red", "Below Threshold" = "grey")) +
         labs(
           title = "Scatter Plot of NES vs -log10 Adjusted P-value",
           x = "Normalized Enrichment Score (NES)",

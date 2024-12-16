@@ -21,9 +21,9 @@ counts_module_ui <- function(id) {
            ),
            sidebarLayout(
              sidebarPanel(
-               fileInput(ns("counts_file"), "Upload a normalized counts file (CSV)"),
+               fileInput(ns("counts_file"), "Upload a normalized counts file (csv)", accept = c(".csv")),
                sliderInput(ns("variance_slider"), "Variance % Threshold:", min = 0, max = 100, value = 50),
-               sliderInput(ns("nonzero_slider"), "Minimum number of non-zero samples", min = 0, max = 8, value = 5)
+               sliderInput(ns("nonzero_slider"), "Minimum number of non-zero samples", min = 0, max = 69, value = 50)
              ),
              mainPanel(
                tabsetPanel(
@@ -64,8 +64,18 @@ counts_module_server <- function(id) {
     # Reactive expression for processing the uploaded file
     counts_data <- reactive({
       req(input$counts_file)  # Ensure that the file is uploaded
-      data <- read.csv(input$counts_file$datapath, row.names = 1)  # THIS MAY NEED CHANGING, HAVE TO SEE
-      return(data)
+      tryCatch({
+        data <- read.csv(input$counts_file$datapath, row.names = 1)
+        
+        # Validate the data
+        if (!is.data.frame(data) || ncol(data) < 1) {
+          stop("Uploaded file does not have the expected format: data must have rows and columns.")
+        }
+        return(data)
+      }, error = function(e) {
+        showNotification("Error reading file. Ensure it is a properly formatted CSV with numeric data.", type = "error")
+        NULL
+      })
     })
     
     # Reactive expression for filtered data
