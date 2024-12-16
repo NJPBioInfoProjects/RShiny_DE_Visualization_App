@@ -13,20 +13,19 @@ library(DT)
 
 # GSEA Module UI
 gsea_module_ui <- function(id) {
-  ns <- NS(id)  # Namespace for the module
+  ns <- NS(id)
   tabPanel("GSEA",
            tags$div(
-             tags$h3("GSEA Results Exploration"),  # Title
-             tags$p("This interactive module allows users to analyze Gene Set Enrichment Analysis (GSEA) results with three dynamic views. Users can explore the top pathways ranked by adjusted p-values in a bar plot, filter and export results in a sortable table, and visualize pathway enrichment scores (NES) against adjusted p-values in a scatter plot. Adjustable sliders and filters provide flexibility for in-depth exploration of significant pathways")  # Caption
+             tags$h3("GSEA Results Exploration"),
+             tags$p("This interactive module allows users to analyze Gene Set Enrichment Analysis (GSEA) results with three dynamic views.")
            ),
            sidebarLayout(
              sidebarPanel(
                fileInput(ns("gsea_file"), "Upload GSEA results (csv):", accept = c(".csv")),
-               actionButton(ns("load_data"), "Submit")  # Button to process the uploaded file
+               actionButton(ns("load_data"), "Submit")
              ),
              mainPanel(
                tabsetPanel(
-                 # Tab 1: Barplot
                  tabPanel("Barplot",
                           sidebarLayout(
                             sidebarPanel(
@@ -37,17 +36,13 @@ gsea_module_ui <- function(id) {
                               plotOutput(ns("gsea_barplot"))
                             )
                           )),
-                 
-                 # Tab 2: Sortable Table
                  tabPanel("Table",
                           sidebarLayout(
                             sidebarPanel(
                               sliderInput(ns("pvalue_threshold"), "Adjusted P-value Threshold:",
                                           min = 0, max = 1, value = 0.05, step = 0.01),
                               radioButtons(ns("nes_filter"), "Filter by NES:",
-                                           choices = c("All" = "all", 
-                                                       "Positive NES" = "positive", 
-                                                       "Negative NES" = "negative"),
+                                           choices = c("All" = "all", "Positive NES" = "positive", "Negative NES" = "negative"),
                                            selected = "all"),
                               downloadButton(ns("download_table"), "Download Filtered Table")
                             ),
@@ -55,8 +50,6 @@ gsea_module_ui <- function(id) {
                               DT::dataTableOutput(ns("gsea_table"))
                             )
                           )),
-                 
-                 # Tab 3: Scatter Plot
                  tabPanel("Scatter Plot",
                           sidebarLayout(
                             sidebarPanel(
@@ -69,8 +62,7 @@ gsea_module_ui <- function(id) {
                           ))
                )
              )
-           )
-  )
+           ))
 }
 
 # GSEA Module Server
@@ -78,16 +70,10 @@ gsea_module_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     gsea_data <- reactiveVal(NULL)
     
-    # Load and validate data
     observeEvent(input$load_data, {
       req(input$gsea_file)
-      ext <- tools::file_ext(input$gsea_file$datapath)
-      data <- if (ext == "csv") {
-        read.csv(input$gsea_file$datapath)
-      } else {
-        read.delim(input$gsea_file$datapath)
-      }
-      # Check for required columns
+      data <- read.csv(input$gsea_file$datapath)
+      
       if (!all(c("pathway", "padj", "NES") %in% colnames(data))) {
         showNotification("Error: File must contain 'pathway', 'padj', and 'NES' columns.", type = "error")
         return()
@@ -95,21 +81,22 @@ gsea_module_server <- function(id) {
       gsea_data(data)
     })
     
-    # --------- Tab 1: Filtered and ordered data for barplot ---------
+    # Filtered data for barplot
     filtered_data <- reactive({
       req(gsea_data())
       gsea_data() %>%
-        arrange(padj) %>%        # Order by padj (ascending)
-        head(input$num_top_pathways)  # Display top N pathways (slider input)
+        arrange(padj) %>%
+        head(input$num_top_pathways)
     })
     
-    # Render the bar plot
+    # Barplot
     output$gsea_barplot <- renderPlot({
       req(filtered_data())
-      ggplot(filtered_data(), aes(x = reorder(pathway, abs(NES)), y = NES, fill = NES > 0)) +
+      ggplot(filtered_data(), aes(x = reorder(pathway, abs(NES)), y = NES, fill = factor(sign(NES), levels = c(-1, 1)))) +
         geom_bar(stat = "identity") +
-        coord_flip() +  # Horizontal bars
-        scale_fill_manual(values = c("red", "blue"), labels = c("Negative NES", "Positive NES")) +
+        coord_flip() +
+        scale_fill_manual(values = c("-1" = "red", "1" = "blue"), 
+                          labels = c("-1" = "Negative NES", "1" = "Positive NES")) +
         labs(
           title = "Top Pathways Ordered by Absolute NES",
           x = "",
@@ -119,20 +106,14 @@ gsea_module_server <- function(id) {
         theme_minimal() +
         theme(
           plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-          axis.text.y = element_text(size = 8),
           legend.position = "bottom"
         )
     })
     
-    # --------- Tab 2: Filtered table based on p-value and NES direction ---------
+    # Filtered table
     filtered_table <- reactive({
       req(gsea_data())
-      data <- gsea_data()
-      
-      # Filter by p-value threshold
-      filtered <- data %>% filter(padj <= input$pvalue_threshold)
-      
-      # Filter by NES direction
+      filtered <- gsea_data() %>% filter(padj <= input$pvalue_threshold)
       if (input$nes_filter == "positive") {
         filtered <- filtered %>% filter(NES > 0)
       } else if (input$nes_filter == "negative") {
@@ -141,13 +122,11 @@ gsea_module_server <- function(id) {
       return(filtered)
     })
     
-    # Render the filtered table
     output$gsea_table <- DT::renderDataTable({
       req(filtered_table())
       DT::datatable(filtered_table(), options = list(pageLength = 10))
     })
     
-    # Download filtered table
     output$download_table <- downloadHandler(
       filename = function() { "filtered_gsea_results.csv" },
       content = function(file) {
@@ -155,16 +134,14 @@ gsea_module_server <- function(id) {
       }
     )
     
-    # --------- Tab 3: Scatter plot ---------
-    # Prepare data for scatter plot
+    # Scatter Plot
     scatter_data <- reactive({
       req(gsea_data())
       gsea_data() %>%
-        mutate(log_padj = -log10(padj),  # Calculate -log10 adjusted p-value
+        mutate(log_padj = -log10(padj),
                color = ifelse(padj <= input$scatter_pvalue_threshold, "Meets Threshold", "Below Threshold"))
     })
     
-    # Render the scatter plot
     output$scatter_plot <- renderPlot({
       req(scatter_data())
       ggplot(scatter_data(), aes(x = NES, y = log_padj, color = color)) +
@@ -185,19 +162,18 @@ gsea_module_server <- function(id) {
   })
 }
 
-
-# Top-level UI
+# UI
 ui <- fluidPage(
   titlePanel("Nick Petrunich BF591 Final Project"),
   tabsetPanel(
-    gsea_module_ui("gsea")  # GSEA module
+    gsea_module_ui("gsea")
   )
 )
 
-# Top-level Server
+# Server
 server <- function(input, output, session) {
-  gsea_module_server("gsea")  # GSEA module
+  gsea_module_server("gsea")
 }
 
-# Run the Shiny app
+# Run the App
 shinyApp(ui = ui, server = server)
