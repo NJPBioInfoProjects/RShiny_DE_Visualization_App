@@ -9,16 +9,21 @@
 
 library(shiny)
 library(tidyverse)
+
+options(shiny.maxRequestSize = 100 * 1024^2)
 # Counts Module UI
 counts_module_ui <- function(id) {
   ns <- NS(id)  # Namespace for the module
   tabPanel("Counts",
+           tags$div(
+             tags$h3("Counts Matrix Exploration"),  # Title
+             tags$p("This module allows  allows you to filter and explore gene expression data through multiple tools, including summary statistics, diagnostic scatter plots, clustered heatmaps, and principal component analysis (PCA). Adjust filtering thresholds to observe their effects on the dataset and identify key patterns or trends.")  # Caption
+           ),
            sidebarLayout(
              sidebarPanel(
                fileInput(ns("counts_file"), "Upload a normalized counts file (CSV)"),
                sliderInput(ns("variance_slider"), "Variance % Threshold:", min = 0, max = 100, value = 50),
-               sliderInput(ns("nonzero_slider"), "Minimum number of non-zero samples", min = 0, max = 8, value = 5),
-               actionButton(ns("submit_counts"), "Submit")
+               sliderInput(ns("nonzero_slider"), "Minimum number of non-zero samples", min = 0, max = 8, value = 5)
              ),
              mainPanel(
                tabsetPanel(
@@ -28,6 +33,7 @@ counts_module_ui <- function(id) {
                           plotOutput(ns("scatter_plot2"))
                  ),
                  tabPanel("Heatmap", 
+                          p("Please allow 10-20 seconds for heatmap to load"),
                           plotOutput(ns("heatmap_plot"))
                  ),
                  tabPanel("PCA",
@@ -153,7 +159,7 @@ counts_module_server <- function(id) {
         scale_color_manual(values = c("lightgray", "darkgreen"), labels = c("Filtered Out", "Passed Filter")) +
         labs(
           title = "Median Count vs Number of Zeros",
-          x = "Number of Zeros",
+          x = "Number of Zero",
           y = "Median Count (log10)",
           color = "Filter Status"
         ) +

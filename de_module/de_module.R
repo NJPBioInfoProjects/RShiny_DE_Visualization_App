@@ -13,13 +13,16 @@ library(ggplot2)
 library(colourpicker)
 library(rlang)
 library(readr)
-library(shinythemes)
 
 # Define UI for application that draws a histogram
 de_module_ui <- function(id) {
   ns <- NS(id)
   tabPanel(
     "DE",
+    tags$div(
+      tags$h3("Differential Expression Analysis"),  # Title
+      tags$p("Upload a DESeq results CSV to visualize data with custom parameters. Press plot button to update plot according to currently selected parameters.")
+    ),
     sidebarLayout(
       sidebarPanel(
         fileInput(ns("file"), "Load differential expression results for visual analysis",
@@ -50,7 +53,7 @@ de_module_ui <- function(id) {
         
         # Slider for p-adjust threshold
         sliderInput(ns("slider"), "Select the magnitude of the p-adjusted coloring:",
-                    min = -300, max = 0, value = -150),
+                    min = -75, max = 0, value = -10),
         
         # Plot button
         actionButton(ns("plot_button"), "Plot")

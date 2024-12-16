@@ -134,7 +134,7 @@ write.csv(fgsea_results_df, "fgsea_results.csv", row.names = FALSE)
 
 fgsea_res <- fgsea_results_df %>%
   arrange(padj)
-head(fgsea_res)
+head(fgsea_res, 10)
 ```
 
 ```{r}
@@ -142,5 +142,33 @@ head(fgsea_res)
 library(tidyverse)
 
 meta <- read.csv("data/sample_metadata 2.csv", row.names = 1)
+
+```
+
+```{r}
+
+# Load necessary libraries
+library(DESeq2)
+
+# Set file path
+file_path <- "data/raw_counts.tsv"
+
+# Read in raw counts
+raw_counts <- read.table(file_path, header = TRUE, sep = "\t", row.names = 1)
+
+# Create a DESeq2 dataset
+# Assuming all samples belong to the same condition for normalization
+col_data <- data.frame(condition = factor(rep(1, ncol(raw_counts))))
+dds <- DESeqDataSetFromMatrix(countData = raw_counts, colData = col_data, design = ~ 1)
+
+# Perform normalization
+dds <- estimateSizeFactors(dds)
+normalized_counts <- counts(dds, normalized = TRUE)
+
+# Save normalized counts as CSV
+write.csv(as.data.frame(normalized_counts), "normalized_counts.csv", row.names = TRUE)
+
+cat("Normalized counts saved to normalized_counts.csv")
+
 
 ```

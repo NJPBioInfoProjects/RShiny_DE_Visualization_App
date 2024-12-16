@@ -11,15 +11,19 @@
 # Samples Module UI
 library(shiny)
 library(DT)  # For interactive data tables
+library(tidyverse)
 
 # Samples Module UI
 samples_module_ui <- function(id) {
   ns <- NS(id)  # Namespace for the module
   tabPanel("Samples",
+           tags$div(
+            tags$h3("Sample Metadata Exploration"),  # Title
+            tags$p("This module allows you to upload a sample metadata file in CSV format, explore the data through tables and plots, and perform basic metadata analysis.")  # Caption
+           ),
            sidebarLayout(
              sidebarPanel(
-               fileInput(ns("sample_file"), "Upload a sample file (.csv)", accept = ".csv")
-               # actionButton(ns("submit_samples"), "Submit") not being used at the moment
+               fileInput(ns("sample_file"), "Upload a sample metadata file (.csv)", accept = ".csv")
              ),
              mainPanel(
                tabsetPanel(
@@ -82,6 +86,8 @@ samples_module_server <- function(id) {
         }),
         check.names = FALSE # Prevents conversion of column names to valid syntax
       )
+      summary <- summary[-c(1, 2), ] #First two columns (sample title and geo accession to reduce clutter)
+      
       return(summary)
     })
     

@@ -15,9 +15,13 @@ library(DT)
 gsea_module_ui <- function(id) {
   ns <- NS(id)  # Namespace for the module
   tabPanel("GSEA",
+           tags$div(
+             tags$h3("GSEA Results Exploration"),  # Title
+             tags$p("This interactive module allows users to analyze Gene Set Enrichment Analysis (GSEA) results with three dynamic views. Users can explore the top pathways ranked by adjusted p-values in a bar plot, filter and export results in a sortable table, and visualize pathway enrichment scores (NES) against adjusted p-values in a scatter plot. Adjustable sliders and filters provide flexibility for in-depth exploration of significant pathways")  # Caption
+           ),
            sidebarLayout(
              sidebarPanel(
-               fileInput(ns("gsea_file"), "Upload GSEA results (CSV/TSV):", accept = c(".csv", ".tsv")),
+               fileInput(ns("gsea_file"), "Upload GSEA results (CSV):", accept = c(".csv", ".tsv")),
                actionButton(ns("load_data"), "Submit")  # Button to process the uploaded file
              ),
              mainPanel(
@@ -91,7 +95,7 @@ gsea_module_server <- function(id) {
       gsea_data(data)
     })
     
-    # Filtered and ordered data for barplot
+    # --------- Tab 1: Filtered and ordered data for barplot ---------
     filtered_data <- reactive({
       req(gsea_data())
       gsea_data() %>%
@@ -115,12 +119,12 @@ gsea_module_server <- function(id) {
         theme_minimal() +
         theme(
           plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-          axis.text.y = element_text(size = 8),  # Adjust y-axis label size
+          axis.text.y = element_text(size = 8),
           legend.position = "bottom"
         )
     })
     
-    # Filtered table based on p-value and NES direction
+    # --------- Tab 2: Filtered table based on p-value and NES direction ---------
     filtered_table <- reactive({
       req(gsea_data())
       data <- gsea_data()
@@ -150,8 +154,37 @@ gsea_module_server <- function(id) {
         write.csv(filtered_table(), file, row.names = FALSE)
       }
     )
+    
+    # --------- Tab 3: Scatter plot ---------
+    # Prepare data for scatter plot
+    scatter_data <- reactive({
+      req(gsea_data())
+      gsea_data() %>%
+        mutate(log_padj = -log10(padj),  # Calculate -log10 adjusted p-value
+               color = ifelse(padj <= input$scatter_pvalue_threshold, "Highlight", "Below Threshold"))
+    })
+    
+    # Render the scatter plot
+    output$scatter_plot <- renderPlot({
+      req(scatter_data())
+      ggplot(scatter_data(), aes(x = NES, y = log_padj, color = color)) +
+        geom_point(size = 3, alpha = 0.7) +
+        scale_color_manual(values = c("Highlight" = "red", "Below Threshold" = "grey")) +
+        labs(
+          title = "Scatter Plot of NES vs -log10 Adjusted P-value",
+          x = "Normalized Enrichment Score (NES)",
+          y = "-log10 Adjusted P-value",
+          color = "Threshold Status"
+        ) +
+        theme_minimal() +
+        theme(
+          plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+          legend.position = "bottom"
+        )
+    })
   })
 }
+
 
 # Top-level UI
 ui <- fluidPage(
