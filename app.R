@@ -10,14 +10,14 @@
 library(shiny)
 
 # Source module files
-source("app_samples/samples_module.R")
-source("counts_module.R/counts_module.R")
-source("de_module/de_module.R")
-source("gsea_module.R/gsea_module.R")
+source("modules/samples_module.R")
+source("modules/counts_module.R")
+source("modules/de_module.R")
+source("modules/gsea_module.R")
 # Define the UI
 ui <- fluidPage(
   titlePanel("Nick Petrunich BF591 Final Project"),
-  tags$h3("This Shiny application can be used to explore different datasets from the Huntington's disease study. Use data from folder to visualize different analyses"),
+  tags$h3("This Shiny application can be used to explore different datasets from the Huntington's disease study. Use data from folder to visualize different analyses."),
   tabsetPanel(
     samples_module_ui("samples"),  # Load Samples Module
     counts_module_ui("counts"),    # Load Counts Module
