@@ -11,10 +11,10 @@ This repo contains my final project for BF591. This Rshiny application was creat
 
 ## Repository Structure
 ``
-├── data/                 # Folder of processed data sets from the study to use in the app
-├── modules/              # Folder containing different Shiny apps that are used as module in the main app
-├── notebooks/            # RMarkdown files for reports and exploration
-├── app.R/                # Main app containing all modules
-├── final_project.Rproj/  # RStudio project file to organize the project environment
+├── data/                 # Folder of processed data sets from the study to use in the app <br>
+├── modules/              # Folder containing different Shiny apps that are used as module in the main app<br>
+├── notebooks/            # RMarkdown files for reports and exploration<br>
+├── app.R/                # Main app containing all modules<br>
+├── final_project.Rproj/  # RStudio project file to organize the project environment<br>
 └── README.md             # Project documentation (this file)
 ``
