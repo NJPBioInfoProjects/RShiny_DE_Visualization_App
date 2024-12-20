@@ -1,7 +1,7 @@
 # BF591 Final Project
 
 ## Overview
-This repo contains my final project for BF591. This Rshiny application was created to visualize and analyze differential expression results, counts matrices, sample data, and fgsea results from the results of a study on Huntington's disease (Labadorf et al., 2016)
+This repo contains my final project for BF591. This Rshiny application was created to visualize and analyze differential expression results, counts matrices, sample data, and fgsea results from the results of a study on Huntington's disease (Labadorf et al., 2015). 
 
 ## Features
 -Analyze sample metadata in both table and plot form <br>
@@ -20,4 +20,8 @@ This repo contains my final project for BF591. This Rshiny application was creat
 ## References
 Labadorf A, Hoss AG, Lagomarsino V, Latourelle JC et al. RNA Sequence Analysis of Human Huntington Disease Brain Reveals an Extensive Increase in Inflammatory and Developmental Gene Expression. *PLoS One* 2015;10(12):e0143563. PMID: 26636579<br>
 Labadorf A, Choi SH, Myers RH. Evidence for a Pan-Neurodegenerative Disease Response in Huntington's and Parkinson's Disease Expression Profiles. *Front Mol Neurosci* 2017;10:430. PMID: 29375298<br>
-Agus F, Crespo D, Myers RH, Labadorf A. The caudate nucleus undergoes dramatic and unique transcriptional changes in human prodromal Huntington's disease brain. *BMC Med Genomics* 2019 Oct 16;12(1):137. PMID: 31619230<br>
+Agus F, Crespo D, Myers RH, Labadorf A. The caudate nucleus undergoes dramatic and unique transcriptional changes in human prodromal Huntington's disease brain. *BMC Med Genomics* 2019 Oct 16;12(1):137. PMID: 31619230<br><br>
+
+
+## Data
+Data available via: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE64810
