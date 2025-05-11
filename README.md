@@ -3,6 +3,9 @@
 ## Overview
 This repo contains my final project for BF591. This Rshiny application was created to visualize and analyze differential expression results, counts matrices, sample data, and fgsea results from the results of a study on Huntington's disease (Labadorf et al., 2015). 
 
+## Use
+In RStudio, navigate to the directory that has this repo stored and open final_project.Rproj. Then, simply open app.R and press the run button in the top right corner of the code viewer window.
+
 ## Features
 -Analyze sample metadata in both table and plot form <br>
 -Analyze counts matrices with adjustable thresholds <br>
